@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+.venv/
+__PRD_EXTRACT/
+*.pyc
+.env
