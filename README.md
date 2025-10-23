@@ -20,7 +20,7 @@ Preparacao Rapida
    pip install -U pip
    pip install -U pytest minio psycopg
    ```
-3. Duplicar `.env.example` para `.env` e ajustar credenciais de S3/PostgreSQL.
+3. Duplicar `.env.example` para `.env` e ajustar apenas endpoints/nomes; as credenciais de S3 e PostgreSQL são solicitadas interativamente em cada execução.
 
 Executar Testes
 ---------------
@@ -74,19 +74,19 @@ python -m project.cli.nist_manager check-connections
 
 Configuracao
 ------------
-Exemplo de `.env`:
+Ao executar qualquer comando da CLI, o sistema solicitará:
+- Usuário e senha do S3 (a senha é exibida como `*`)
+- Usuário e senha do banco PostgreSQL (senha mascarada)
+
+Mantenha o `.env` para apontar apenas variáveis não sensíveis, como endpoints e nomes. Exemplo:
 ```
 S3_ENDPOINT=http://127.0.0.1:9000
 S3_BUCKET=teste
-S3_ACCESS=minio
-S3_SECRET=minio123
 S3_SECURE=false
 
 DB_HOST=127.0.0.1
 DB_PORT=5432
 DB_NAME=mitra
-DB_USER=postgres
-DB_PASSWORD=postgres
 
 LOG_LEVEL=INFO
 ```
