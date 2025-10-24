@@ -1,87 +1,87 @@
-﻿# Tutorial do Projeto MITRA NIST
+# Tutorial do Projeto MITRA NIST
 
-## VisÃ£o Geral
-Este tutorial apresenta a arquitetura do MITRA NIST, descrevendo as responsabilidades de cada componente e detalhando os fluxos principais da aplicaÃ§Ã£o: upload de arquivos `.nst` para o S3/MinIO e consumo desses arquivos para persistÃªncia no banco PostgreSQL.
+## Visão Geral
+Este tutorial apresenta a arquitetura do MITRA NIST, descrevendo as responsabilidades de cada componente e detalhando os fluxos principais da aplicação: upload de arquivos `.nst` para o S3/MinIO e consumo desses arquivos para persistência no banco PostgreSQL.
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚          UsuÃ¡rios           â”‚
-â”‚  (CLI / scripts / jobs)     â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-              â”‚
+┌─────────────────────────────┐
+│          Usuários           │
+│  (CLI / scripts / jobs)     │
+└─────────────┬───────────────┘
+              │
               v
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚        Camada de App        â”‚
-â”‚  (Use cases + Services)     â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-              â”‚
+┌─────────────────────────────┐
+│        Camada de App        │
+│  (Use cases + Services)     │
+└─────────────┬───────────────┘
+              │
               v
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚       Portas (Ports)        â”‚
-â”‚   Interfaces de contrato    â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-              â”‚
+┌─────────────────────────────┐
+│       Portas (Ports)        │
+│   Interfaces de contrato    │
+└─────────────┬───────────────┘
+              │
               v
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚     Adaptadores de Infra     â”‚
-â”‚  (S3/MinIO, PostgreSQL etc) â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-              â”‚
+┌─────────────────────────────┐
+│     Adaptadores de Infra     │
+│  (S3/MinIO, PostgreSQL etc) │
+└─────────────┬───────────────┘
+              │
               v
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚   ServiÃ§os Externos Reais    â”‚
-â”‚ (MinIO, Banco, Sistema de    â”‚
-â”‚  Arquivos, HTTP APIs, etc.) â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌─────────────────────────────┐
+│   Serviços Externos Reais    │
+│ (MinIO, Banco, Sistema de    │
+│  Arquivos, HTTP APIs, etc.) │
+└─────────────────────────────┘
 ```
 
 ### Onde configurar S3 e Banco?
-- `./.env`: arquivo central para apontar o endpoint do S3/MinIO (`S3_ENDPOINT`, `S3_BUCKET`, `S3_SECURE`) e as configurações do banco (`DB_HOST`, `DB_PORT`, `DB_NAME`). Credenciais sensíveis (`S3_ACCESS`, `S3_SECRET`, `DB_USER`, `DB_PASSWORD`) são solicitadas interativamente sempre que a CLI é executada; defina-as apenas se precisar de execução automatizada (CI/CD). Também define o `LOG_LEVEL`.
-- `project/config.py`: converte valores do `.env` em um objeto `Config`. Qualquer ajuste de variÃ¡veis ou valores padrÃ£o deve ser feito aqui.
-- `project/infra/s3/miniosdk.py`: usa `Config` para construir o cliente MinIO com timeouts e parÃ¢metros de seguranÃ§a.
-- `project/infra/db/orm_db.py`: utiliza `Config` para abrir conexÃµes PostgreSQL com `psycopg`.
+- `./.env`: arquivo central para apontar o endpoint do S3/MinIO (`S3_ENDPOINT`, `S3_BUCKET`, `S3_SECURE`) e as configura��es do banco (`DB_HOST`, `DB_PORT`, `DB_NAME`). Credenciais sens�veis (`S3_ACCESS`, `S3_SECRET`, `DB_USER`, `DB_PASSWORD`) s�o solicitadas interativamente sempre que a CLI � executada; defina-as apenas se precisar de execu��o automatizada (CI/CD). Tamb�m define o `LOG_LEVEL`.
+- `project/config.py`: converte valores do `.env` em um objeto `Config`. Qualquer ajuste de variáveis ou valores padrão deve ser feito aqui.
+- `project/infra/s3/miniosdk.py`: usa `Config` para construir o cliente MinIO com timeouts e parâmetros de segurança.
+- `project/infra/db/orm_db.py`: utiliza `Config` para abrir conexões PostgreSQL com `psycopg`.
 
 ## Estrutura de Pastas e Arquitetura
 
 ```
 project/
-â”œâ”€â”€ application/
-â”‚   â”œâ”€â”€ ports/
-â”‚   â”œâ”€â”€ services/
-â”‚   â””â”€â”€ usecases/
-â”œâ”€â”€ infra/
-â”‚   â”œâ”€â”€ db/
-â”‚   â””â”€â”€ s3/
-â”œâ”€â”€ cli/
-â”œâ”€â”€ config.py
-â”œâ”€â”€ logging_config.py
-â””â”€â”€ __init__.py
+├── application/
+│   ├── ports/
+│   ├── services/
+│   └── usecases/
+├── infra/
+│   ├── db/
+│   └── s3/
+├── cli/
+├── config.py
+├── logging_config.py
+└── __init__.py
 tests/
-â”œâ”€â”€ unit/
-â””â”€â”€ conftest.py
+├── unit/
+└── conftest.py
 ```
 
-### Camada de ConfiguraÃ§Ã£o e Utilidades
-- `project/config.py`: LÃª o `.env`, encapsula em `Config`, converte tipos e dÃ¡ suporte a mÃºltiplos nomes de variÃ¡veis. `_load_env_file` injeta valores no ambiente.
-- `project/logging_config.py`: Configura logging global (nÃ­vel via `.env`).
+### Camada de Configuração e Utilidades
+- `project/config.py`: Lê o `.env`, encapsula em `Config`, converte tipos e dá suporte a múltiplos nomes de variáveis. `_load_env_file` injeta valores no ambiente.
+- `project/logging_config.py`: Configura logging global (nível via `.env`).
 - `project/__init__.py`: Marca o pacote principal.
-- `nistuploader.py`: Script auxiliar legado; referencia operaÃ§Ãµes diretas de upload (a CLI oficial estÃ¡ em `project/cli`).
+- `nistuploader.py`: Script auxiliar legado; referencia operações diretas de upload (a CLI oficial está em `project/cli`).
 
-### Camada de AplicaÃ§Ã£o (`project/application`)
+### Camada de Aplicação (`project/application`)
 #### Ports (`project/application/ports`)
 - `s3_port.py`: Define o contrato S3 (`list_nists`, `read_bytes`, `move_processed`, `upload_bytes`, `object_exists`, `delete_object`, `delete_prefix`).
-- `repository_port.py`: Contrato para persistÃªncia/log (`upsert_person_from_nist`, `log`).
+- `repository_port.py`: Contrato para persistência/log (`upsert_person_from_nist`, `log`).
 
 #### Services (`project/application/services`)
-- `checksum_service.py`: ServiÃ§o para cÃ¡lculo de hash MD5 (`ChecksumService.md5_bytes`).
-- `nist_parser_service.py`: Parser heurÃ­stico de NIST. ExpÃµe:
+- `checksum_service.py`: Serviço para cálculo de hash MD5 (`ChecksumService.md5_bytes`).
+- `nist_parser_service.py`: Parser heurístico de NIST. Expõe:
   - Entidades `Person` e `OriginBase`.
   - `parse`: extrai dados (principalmente origem 1:008) e sanitiza texto.
   - `compose_key_for_upload`: gera chave `nist/<origem>/<arquivo>`.
   - `destination_key_for_processed`: chave `nist-lidos/<origem>/<arquivo>`.
 
 #### Use Cases (`project/application/usecases`)
-- `upload_nist_usecase.py`: LÃª arquivo local, gera chave via parser e envia bytes para S3.
+- `upload_nist_usecase.py`: Lê arquivo local, gera chave via parser e envia bytes para S3.
 - `move_processed_usecase.py`: Calcula chave de destino e move objeto processado.
 - `delete_nist_usecase.py`: Remove objetos individuais, por prefixo ou todo o bucket.
 - `process_nist_usecase.py`: Fluxo principal:
@@ -95,75 +95,75 @@ tests/
 ### Camada de Infraestrutura (`project/infra`)
 #### S3 (`project/infra/s3`)
 - `s3_manager.py`:
-  - `_field_1_008`: extrai o campo 1:008 aceitando variaÃ§Ãµes (1:008, 1.08, 1.0008 etc.).
+  - `_field_1_008`: extrai o campo 1:008 aceitando variações (1:008, 1.08, 1.0008 etc.).
   - `MinioS3Adapter`: implementa??o de `S3Port` usando `minio.Minio`, cobrindo listagem, leitura, upload, movimenta??o e remo??o (chave/prefixo).
 - `miniosdk.py`: `MinioFactory` monta cliente MinIO configurado.
 
 #### Banco de Dados (`project/infra/db`)
-- `orm_db.py`: `PgManager` centraliza conexÃµes PostgreSQL e oferece `test_connection`.
+- `orm_db.py`: `PgManager` centraliza conexões PostgreSQL e oferece `test_connection`.
 - `person_repository.py`: `PgPersonRepository` implementa `RepositoryPort`.
   - `_ensure_schema`: cria schema `findface` e tabelas (`tb_nist_ingest`, `tb_log`) com colunas essenciais.
   - `upsert_person_from_nist`: `INSERT ... ON CONFLICT` por `md5_hash`.
   - `log`: Persiste logs em `findface.tb_log`.
 
-#### SanitizaÃ§Ã£o (`project/infra`)
-- `sanitizers.py`: FunÃ§Ãµes utilitÃ¡rias:
-  - `sanitize_text`: remove acentos, normaliza espaÃ§os e uppercase.
-  - `parse_date`: interpreta datas em mÃºltiplos formatos.
-  - `normalize_sex`: converte cÃ³digos de sexo em `M`, `F` ou `U`.
+#### Sanitização (`project/infra`)
+- `sanitizers.py`: Funções utilitárias:
+  - `sanitize_text`: remove acentos, normaliza espaços e uppercase.
+  - `parse_date`: interpreta datas em múltiplos formatos.
+  - `normalize_sex`: converte códigos de sexo em `M`, `F` ou `U`.
 
 ### Camada de Interface (`project/cli`)
 - `nist_manager.py`: CLI principal com subcomandos:
-  - `process` â€” processa NISTs pendentes.
-  - `upload` â€” upload de arquivo local.
-  - `upload-batch` â€” upload mÃºltiplo (arquivos/diretÃ³rios).
-  - `upload-url` â€” baixa e envia `.nst` por URL.
-  - `upload-url-index` â€” consome Ã­ndice JSON/TXT de URLs.
-  - `sample` â€” coleta amostras do S3.
-  - `sample-local` â€” processa `./nists`.
-  - `db-sample` â€” consulta tabelas do schema `findface`.
-  - `check-connections` â€” valida MinIO e PostgreSQL.
-- Instancia adaptadores reais (`MinioS3Adapter`, `PgPersonRepository`) e serviÃ§os (`NistParserService`, `ChecksumService`, `ProcessNistUseCase`).
+  - `process` — processa NISTs pendentes.
+  - `upload` — upload de arquivo local.
+  - `upload-batch` — upload múltiplo (arquivos/diretórios).
+  - `upload-url` — baixa e envia `.nst` por URL.
+  - `upload-url-index` — consome índice JSON/TXT de URLs.
+  - `sample` — coleta amostras do S3.
+  - `sample-local` — processa `./nists`.
+  - `db-sample` — consulta tabelas do schema `findface`.
+  - `check-connections` — valida MinIO e PostgreSQL.
+- Instancia adaptadores reais (`MinioS3Adapter`, `PgPersonRepository`) e serviços (`NistParserService`, `ChecksumService`, `ProcessNistUseCase`).
 
 ### Testes (`tests/`)
-- `tests/unit/test_*.py`: Cobrem sanitizaÃ§Ã£o, serviÃ§os, use cases e adaptadores.
-- `tests/conftest.py`: ConfiguraÃ§Ãµes comuns.
+- `tests/unit/test_*.py`: Cobrem sanitização, serviços, use cases e adaptadores.
+- `tests/conftest.py`: Configurações comuns.
 
-## Como o CÃ³digo Funciona
+## Como o Código Funciona
 
-1. **Configuração**: `load_config` lê `.env`, solicita interativamente as credenciais sensíveis (senhas aparecem mascaradas) e devolve um objeto `Config` consumido pela CLI e pelos serviços.
-2. **Ports e Use Cases**: Regras de negÃ³cio dependem apenas das interfaces (`S3Port`, `RepositoryPort`), permitindo trocar adaptadores.
+1. **Configura��o**: `load_config` l� `.env`, solicita interativamente as credenciais sens�veis (senhas aparecem mascaradas) e devolve um objeto `Config` consumido pela CLI e pelos servi�os.
+2. **Ports e Use Cases**: Regras de negócio dependem apenas das interfaces (`S3Port`, `RepositoryPort`), permitindo trocar adaptadores.
 3. **Upload**:
    - `UploadNistUseCase` recebe caminho local.
-   - Parser compÃµe a chave `nist/<origem>/<arquivo>`.
+   - Parser compõe a chave `nist/<origem>/<arquivo>`.
    - Caso de uso envia bytes ao S3.
-4. **Processamento/PersistÃªncia**:
+4. **Processamento/Persistência**:
    - `ProcessNistUseCase` itera chaves `nist/`.
-   - `read_bytes` â†’ `md5` â†’ `parse`.
+   - `read_bytes` → `md5` → `parse`.
    - Anexa `s3_key`, chama `upsert_person_from_nist`.
    - Move objeto para `nist-lidos/` e loga sucesso.
-   - Em exceÃ§Ãµes, loga erro e continua (resiliÃªncia).
+   - Em exceções, loga erro e continua (resiliência).
 5. **Infraestrutura**:
    - `MinioS3Adapter` conecta use cases ao MinIO.
-   - `PgPersonRepository` cuida da persistÃªncia e logs.
-6. **CLI**: Oferece comandos scriptÃ¡veis; ideal para cron/pipelines.
+   - `PgPersonRepository` cuida da persistência e logs.
+6. **CLI**: Oferece comandos scriptáveis; ideal para cron/pipelines.
 
 ## Fluxo Arquitetural (High-Level)
 
-1. UsuÃ¡rio interage via CLI/automation.
-2. `nist_manager.py` carrega `Config` e instÃ¢ncias concretas.
-3. Use case apropriado (upload/process) Ã© executado.
-4. InteraÃ§Ãµes com MinIO e PostgreSQL ocorrem via adaptadores.
-5. Logs e persistÃªncia garantem rastreabilidade e consistÃªncia.
+1. Usuário interage via CLI/automation.
+2. `nist_manager.py` carrega `Config` e instâncias concretas.
+3. Use case apropriado (upload/process) é executado.
+4. Interações com MinIO e PostgreSQL ocorrem via adaptadores.
+5. Logs e persistência garantem rastreabilidade e consistência.
 
-## Exemplos PrÃ¡ticos
+## Exemplos Práticos
 
-### PreparaÃ§Ã£o
+### Preparação
 ```powershell
 # Ativar virtualenv (Windows)
 .\.venv\Scripts\Activate.ps1
 
-# Definir variÃ¡veis de ambiente (opcional se jÃ¡ ajustadas no .env)
+# Definir variáveis de ambiente (opcional se já ajustadas no .env)
 $env:S3_ENDPOINT="http://127.0.0.1:9000"
 $env:S3_BUCKET="teste"
 ```
@@ -172,10 +172,10 @@ $env:S3_BUCKET="teste"
 
 **Sistema de Arquivos**
 ```powershell
-# Arquivo Ãºnico
+# Arquivo único
 python -m project.cli.nist_manager upload "nists\TSE\116908146.nst"
 
-# DiretÃ³rio (recursivo)
+# Diretório (recursivo)
 python -m project.cli.nist_manager upload-batch nists --recursive
 ```
 
@@ -184,7 +184,7 @@ python -m project.cli.nist_manager upload-batch nists --recursive
 # URL direta
 python -m project.cli.nist_manager upload-url https://servidor/arq.nst
 
-# Ãndice JSON/TXT
+# Índice JSON/TXT
 python -m project.cli.nist_manager upload-url-index https://servidor/indice.json --format json
 python -m project.cli.nist_manager upload-url-index https://servidor/lista.txt --format txt
 ```
@@ -204,10 +204,10 @@ parser = NistParserService()
 
 usecase = UploadNistUseCase(s3=s3, nist_tools=parser)
 key = usecase.execute("nists/TSE/116908146.nst")
-print("Upload concluÃ­do:", key)
+print("Upload concluído:", key)
 ```
 
-### 2. Processamento e PersistÃªncia
+### 2. Processamento e Persistência
 
 **Via CLI**
 ```powershell
@@ -278,44 +278,45 @@ usecase.delete_by_prefix("nist/BR/TSE/")
 usecase.delete_all()
 ```
 
-### 4. PersistÃªncia no Banco
+### 4. Persistência no Banco
 
 - `md5_hash`: calculado por `ChecksumService.md5_bytes`.
 - `origin`: derivada de `_field_1_008` e sanitizada.
 - `s3_key`: adicionada ao objeto `OriginBase` antes do upsert.
 - `PgPersonRepository` armazena em `findface.tb_nist_ingest` e logs em `findface.tb_log`.
 
-### 5. DiagnÃ³sticos e Testes
+### 5. Diagnósticos e Testes
 
 ```powershell
-# Testar conexÃµes
+# Testar conexões
 python -m project.cli.nist_manager check-connections
 
 # Rodar testes
 pytest
 ```
 
-### 6. InterpretaÃ§Ã£o do Parser NIST
+### 6. Interpretação do Parser NIST
 
-- `_field_1_008`: LÃª o campo 1:008 com tolerÃ¢ncia a variaÃ§Ãµes. Se nÃ£o encontrado, retorna `unknown`.
+- `_field_1_008`: Lê o campo 1:008 com tolerância a variações. Se não encontrado, retorna `unknown`.
 - `sanitize_text`: Normaliza origem (upper sem acentos).
 - `destination_key_for_processed`: Reaproveita nome do arquivo, apenas trocando o prefixo.
 
-## Boas PrÃ¡ticas e ExtensÃµes
+## Boas Práticas e Extensões
 
-- **SOLID**: Ports/use cases isolam regras de negÃ³cio; adaptadores mantÃªm responsabilidades separadas.
-- **DDD**: Entidades (`Person`, `OriginBase`) representam conceitos de domÃ­nio.
-- **DRY**: FunÃ§Ãµes auxiliares (ex.: `_extract_field`) evitam repetiÃ§Ã£o.
+- **SOLID**: Ports/use cases isolam regras de negócio; adaptadores mantêm responsabilidades separadas.
+- **DDD**: Entidades (`Person`, `OriginBase`) representam conceitos de domínio.
+- **DRY**: Funções auxiliares (ex.: `_extract_field`) evitam repetição.
 - **TDD**: Tests em `tests/unit` cobrem fluxos principais.
-- **Code Smells**: Manter atenÃ§Ã£o ao tratamento genÃ©rico de exceÃ§Ãµes (atualmente utilitÃ¡rio para resiliÃªncia).
+- **Code Smells**: Manter atenção ao tratamento genérico de exceções (atualmente utilitário para resiliência).
 
-## PrÃ³ximos Passos
+## Próximos Passos
 
 1. Expandir o parser para extrair campos adicionais (tipo 2 e outros).
-2. Adicionar testes de integraÃ§Ã£o com MinIO/postgres reais (ex.: `docker-compose`).
-3. Implementar monitoramento/observabilidade (mÃ©tricas, rastreamento, logs estruturados).
+2. Adicionar testes de integração com MinIO/postgres reais (ex.: `docker-compose`).
+3. Implementar monitoramento/observabilidade (métricas, rastreamento, logs estruturados).
 4. Automatizar em CI/CD (lint, pytest, cobertura).
 5. Revisar `_field_1_008` conforme novos formatos de arquivos.
 
 
   - `delete` ? remove objetos (chave, prefixo ou todos).
+

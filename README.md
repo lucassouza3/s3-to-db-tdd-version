@@ -108,3 +108,4 @@ Proximos Passos Sugeridos
 - Adicionar testes de integracao utilizando instancias locais de MinIO e PostgreSQL.
 - Expandir o parser NIST para extrair campos adicionais conforme a necessidade do PRD.
 - Configurar pipeline de CI com `pytest` e cobertura.
+
