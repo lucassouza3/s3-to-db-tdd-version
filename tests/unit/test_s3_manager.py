@@ -6,7 +6,7 @@ from typing import Iterable
 from minio.error import S3Error
 from urllib3.response import HTTPResponse
 
-from project.infra.s3.s3_manager import MinioS3Adapter, _field_1_008
+from project.infra.s3.s3_manager import MinioS3Adapter, _field_1_008, _tag_matches
 
 
 def test_campo_1_008_extracts_value() -> None:
@@ -17,11 +17,18 @@ def test_campo_1_008_extracts_value() -> None:
 def test_campo_1_008_handles_alternate_formats() -> None:
     assert _field_1_008(b"1.08:TSE") == "TSE"
     assert _field_1_008(b"1.0008=TSE") == "TSE"
+    assert _field_1_008(b" \n1:008 TSE") == "TSE"
 
 
 def test_campo_1_008_returns_none_when_missing() -> None:
     assert _field_1_008(b"no marker here") is None
     assert _field_1_008(b"") is None
+
+
+def test_tag_matches_handles_edge_cases() -> None:
+    assert _tag_matches("sem-digitos", 1, 8) is False
+    assert _tag_matches("2:008", 1, 8) is False
+    assert _tag_matches("1:008", 1, 8) is True
 
 
 @dataclass

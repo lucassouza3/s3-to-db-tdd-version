@@ -32,10 +32,7 @@ def _tag_matches(tag: str, type_no: int, field_no: int) -> bool:
         return False
     field_digits = digits[len(type_digits) :] or "0"
     field_value = field_digits.lstrip("0") or "0"
-    try:
-        return int(field_value) == field_no
-    except ValueError:
-        return False
+    return field_value == str(field_no)
 
 
 def _extract_field(nist_bytes: bytes, type_no: int, field_no: int) -> Optional[str]:

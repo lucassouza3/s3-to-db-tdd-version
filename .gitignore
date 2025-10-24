@@ -4,3 +4,4 @@ __pycache__/
 __PRD_EXTRACT/
 *.pyc
 .env
+.coverage

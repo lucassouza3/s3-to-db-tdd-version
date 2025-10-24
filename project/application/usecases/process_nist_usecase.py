@@ -12,7 +12,7 @@ class S3Port(Protocol):
         ...
 
     def read_bytes(self, key: str) -> bytes:
-        """Lê o conteúdo bruto de um objeto S3."""
+        """Le o conteudo bruto de um objeto S3."""
         ...
 
     def move_processed(self, key: str, dest_key: str) -> None:
@@ -21,7 +21,7 @@ class S3Port(Protocol):
 
 
 class RepositoryPort(Protocol):
-    """Porta de repositório para persistência e logs."""
+    """Porta de repositorio para persistencia e logs."""
 
     def upsert_person_from_nist(self, person: object, origin_base: object, md5_hash: str) -> None:
         """Persiste ou atualiza os dados derivados do NIST."""
@@ -34,7 +34,7 @@ class RepositoryPort(Protocol):
 
 @dataclass
 class ProcessNistUseCase:
-    """Processa os NISTs pendentes disponíveis no bucket."""
+    """Processa os NISTs pendentes disponiveis no bucket."""
 
     s3: S3Port
     repository: RepositoryPort
@@ -50,7 +50,7 @@ class ProcessNistUseCase:
                 md5_hash = self.checksum.md5_bytes(raw)
                 person, origin_base = self.parser.parse(raw)
 
-                # Acrescenta metadados mínimos para persistência.
+                # Acrescenta metadados minimos para persistencia.
                 try:
                     setattr(origin_base, "s3_key", key)
                 except Exception:
@@ -62,6 +62,6 @@ class ProcessNistUseCase:
                 self.s3.move_processed(key, destination)
                 self.repository.log("INFO", f"Processed {key} -> {destination}")
                 processed += 1
-            except Exception as exc:  # pragma: no cover - dependência externa
+            except Exception as exc:
                 self.repository.log("ERROR", f"Failed {key}: {exc}")
         return processed

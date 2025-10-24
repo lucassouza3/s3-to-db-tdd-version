@@ -100,3 +100,31 @@ def test_execute_logs_errors_and_continues() -> None:
     assert processed == 1
     assert any(level == "ERROR" and "fail.nst" in message for level, message in repository.log_calls)
     assert any(level == "INFO" and "ok.nst" in message for level, message in repository.log_calls)
+
+
+def test_execute_handles_immutable_origin_base() -> None:
+    payload = b"1:008 TSE\n"
+    s3 = DummyS3(payload=payload)
+    checksum = DummyChecksum()
+    repository = DummyRepository(upsert_calls=[], log_calls=[])
+
+    class ImmutableOriginBase:
+        __slots__ = ("origin",)
+
+        def __init__(self, origin: str) -> None:
+            object.__setattr__(self, "origin", origin)
+
+        def __setattr__(self, name: str, value) -> None:  # noqa: ANN001
+            raise AttributeError("locked")
+
+    class ImmutableParser(DummyParser):
+        def parse(self, raw: bytes) -> tuple[Person, OriginBase]:
+            return Person(), ImmutableOriginBase(origin="TSE")
+
+    parser = ImmutableParser()
+    usecase = ProcessNistUseCase(s3=s3, repository=repository, parser=parser, checksum=checksum)
+
+    processed = usecase.execute()
+
+    assert processed == 1
+    assert any("Processed" in message for _, message in repository.log_calls)
