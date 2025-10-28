@@ -36,7 +36,7 @@ Este tutorial apresenta a arquitetura do MITRA NIST, descrevendo as responsabili
 ```
 
 ### Onde configurar S3 e Banco?
-- `./.env`: arquivo central para apontar o endpoint do S3/MinIO (`S3_ENDPOINT`, `S3_BUCKET`, `S3_SECURE`) e as configurações do banco (`DB_HOST`, `DB_PORT`, `DB_NAME`). Credenciais sensíveis (`S3_ACCESS`, `S3_SECRET`, `DB_USER`, `DB_PASSWORD`) são solicitadas interativamente sempre que a CLI é executada; defina-as apenas se precisar de execução automatizada (CI/CD). Também define o `LOG_LEVEL`.
+- `./.env`: arquivo central para apontar o endpoint do S3/MinIO (`S3_ENDPOINT`, `S3_BUCKET`, `S3_SECURE`) e as configuraï¿½ï¿½es do banco (`DB_HOST`, `DB_PORT`, `DB_NAME`). Credenciais sensï¿½veis (`S3_ACCESS`, `S3_SECRET`, `DB_USER`, `DB_PASSWORD`) sï¿½o solicitadas interativamente sempre que a CLI ï¿½ executada; defina-as apenas se precisar de execuï¿½ï¿½o automatizada (CI/CD). Tambï¿½m define o `LOG_LEVEL`.
 - `project/config.py`: converte valores do `.env` em um objeto `Config`. Qualquer ajuste de variÃ¡veis ou valores padrÃ£o deve ser feito aqui.
 - `project/infra/s3/miniosdk.py`: usa `Config` para construir o cliente MinIO com timeouts e parÃ¢metros de seguranÃ§a.
 - `project/infra/db/orm_db.py`: utiliza `Config` para abrir conexÃµes PostgreSQL com `psycopg`.
@@ -131,7 +131,7 @@ tests/
 
 ## Como o CÃ³digo Funciona
 
-1. **Configuração**: `load_config` lê `.env`, solicita interativamente as credenciais sensíveis (senhas aparecem mascaradas) e devolve um objeto `Config` consumido pela CLI e pelos serviços.
+1. **Configuraï¿½ï¿½o**: `load_config` lï¿½ `.env`, solicita interativamente as credenciais sensï¿½veis (senhas aparecem mascaradas) e devolve um objeto `Config` consumido pela CLI e pelos serviï¿½os.
 2. **Ports e Use Cases**: Regras de negÃ³cio dependem apenas das interfaces (`S3Port`, `RepositoryPort`), permitindo trocar adaptadores.
 3. **Upload**:
    - `UploadNistUseCase` recebe caminho local.
@@ -320,3 +320,17 @@ pytest
 
   - `delete` ? remove objetos (chave, prefixo ou todos).
 
+
+Para subir os NISTs de duas pastas com a CLI do projeto, execute no PowerShell (dentro do repositÃ³rio):
+
+  Set-Location 
+  "C:\Users\lucas\OneDrive\Documents\Programas\MITRA NIST"
+  .\.venv\Scripts\activate
+
+  python -m project.cli.nist_manager upload-batch `
+    "C:\Users\lucas\OneDrive\Documents\nist\yellownotices" `
+    "C:\Users\lucas\OneDrive\Documents\nist\rednotices" `
+    --recursive
+
+    # linha Ãºnica
+    python -m project.cli.nist_manager upload-batch "C:\Users\lucas\OneDrive\Documents\nist\yellownotices" "C:\Users\lucas\OneDrive\Documents\nist\rednotices" --recursive
